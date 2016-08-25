@@ -1,5 +1,4 @@
 Module mod_afssh
-use matmul_lapack
 !! Hammes-Schiffer, Tully, JCP 101, 4657 (1994)
 implicit none
 real*8, parameter :: clight=2.99792458D10,av=6.0221367D23,hbar=1.05457266D-34
@@ -564,18 +563,18 @@ subroutine rk4(ci,dtq,dVk_dt)
   real*8,intent(in) :: dtq,dVk_dt(nquant)
   complex*16,dimension(1:nquant):: k1,k2,k3,k4
 
-  k1=matmul_lap(mat_adiab,ci)
+  k1=matmul(mat_adiab,ci)
 
   V_k=V_k+dVk_dt*dtq/2.d0
   call compute_mat_adiab
 
-  k2=matmul_lap(mat_adiab,ci+0.5*dtq*k1)
-  k3=matmul_lap(mat_adiab,ci+0.5*dtq*k2)
+  k2=matmul(mat_adiab,ci+0.5*dtq*k1)
+  k3=matmul(mat_adiab,ci+0.5*dtq*k2)
 
   V_k=V_k+dVk_dt*dtq/2.d0
   call compute_mat_adiab
 
-  k4=matmul_lap(mat_adiab,ci+dtq*k3)
+  k4=matmul(mat_adiab,ci+dtq*k3)
 
   ci=ci+dtq/6.d0*(k1+2*k2+2*k3+k4)
 
@@ -939,7 +938,7 @@ subroutine write_average
   pop_amp=pop_amp/nf
 
   do i=1,nsteps/nstep_avg+1
-    write(100,'(16f15.7)')(i-1)*nstep_avg*dtc*1.d15,pop(:,i),pop_surf(:,i),pop_amp(:,i)
+    write(100,'(16f15.7)')(i-1)*nstep_avg*dtc*1.d15,pop(:,i)
   enddo
 
   write(101,*) Vc/wave_to_J,cnt_frust,cnt_collapse
@@ -1000,7 +999,7 @@ subroutine tise
   enddo
 
   do i=1,nclass
-    delH_dels_ad(state,state,i)=sum(si_adiab(:,state)*matmul_lap(delH_dels(:,:,i),si_adiab(:,state)))
+    delH_dels_ad(state,state,i)=sum(si_adiab(:,state)*matmul(delH_dels(:,:,i),si_adiab(:,state)))
   enddo
   !call cpu_time(t2);tim_diag=tim_diag+(t2-t1)
 
@@ -1026,7 +1025,7 @@ subroutine compute_delH_dels_ad
   force=0.d0
   do k=1,nquant
     do i=1,nclass
-      delH_dels_ad(k,k,i)=sum(si_adiab(:,k)*matmul_lap(delH_dels(:,:,i),si_adiab(:,k)))
+      delH_dels_ad(k,k,i)=sum(si_adiab(:,k)*matmul(delH_dels(:,:,i),si_adiab(:,k)))
     enddo
     force(k,:)=-delH_dels_ad(k,k,:)
   enddo
@@ -1041,7 +1040,7 @@ subroutine compute_dij
   do k=1,nquant-1
     do kp=k+1,nquant
       do i=1,nclass
-        d_ij(k,kp,i)=sum(si_adiab(:,k)*matmul_lap(delH_dels(:,:,i),si_adiab(:,kp)))
+        d_ij(k,kp,i)=sum(si_adiab(:,k)*matmul(delH_dels(:,:,i),si_adiab(:,kp)))
       enddo
       d_ij(k,kp,:)=d_ij(k,kp,:)/(V_k(kp)-V_k(k))
       d_ij(kp,k,:)=-d_ij(k,kp,:)
@@ -1064,7 +1063,7 @@ subroutine compute_dij_2state(x_hop,k,kp,dp)
   call evaluate_variables(0)
 
   do i=1,nclass
-    dp(i)=sum(si_adiab(:,k)*matmul_lap(delH_dels(:,:,i),si_adiab(:,kp)))
+    dp(i)=sum(si_adiab(:,k)*matmul(delH_dels(:,:,i),si_adiab(:,kp)))
   enddo
   dp=dp/(V_k(kp)-V_k(k))
 
@@ -1138,9 +1137,9 @@ subroutine orthoganalize(mat,n)
   real*8,intent(inout)::mat(n,n)
   real*8 S_mat(n,n)
 
-  S_mat=matmul_lap(transpose(mat),mat)
+  S_mat=matmul(transpose(mat),mat)
   call inverse_squareroot(S_mat,n)
-  mat=matmul_lap(mat,S_mat)
+  mat=matmul(mat,S_mat)
 
 end subroutine orthoganalize
 !-----------------------------------------------------------------  
@@ -1284,7 +1283,7 @@ function commute(A,B,iflag)
   complex*16 tmp
   integer j,k
 
-  if(iflag==0) commute=matmul_lap(A,B)-matmul_lap(B,A)
+  if(iflag==0) commute=matmul(A,B)-matmul(B,A)
 
   if(iflag==1) then
     !! Assume A is diagonal
@@ -1319,7 +1318,7 @@ function anti_commute(A,B,iflag)
   real*8 delA(nquant,nquant)
   integer i,j
 
-  if(iflag==0) anti_commute=matmul_lap(A,B)+matmul_lap(B,A)
+  if(iflag==0) anti_commute=matmul(A,B)+matmul(B,A)
 
   if(iflag==1) then
     !! Assume A is diagonal
@@ -1401,7 +1400,7 @@ subroutine logm(mat,log_mat,n)
     dd(i,i)=cdlog(t(i,i)/cdabs(t(i,i)))
   enddo
 
-  log_mat=matmul_lap(vect,matmul_lap(dd,conjg(transpose(vect))))
+  log_mat=matmul(vect,matmul(dd,conjg(transpose(vect))))
 
 end subroutine logm
 !-----------------------------------------------------------------  
@@ -1422,7 +1421,7 @@ subroutine inverse_squareroot(mat,n)
     dd(i,i)=1.d0/t(i,i)**0.5d0
   enddo
 
-  mat=matmul_lap(vect,matmul_lap(dd,conjg(transpose(vect))))
+  mat=matmul(vect,matmul(dd,conjg(transpose(vect))))
 
 end subroutine inverse_squareroot
 !-----------------------------------------------------------------  
