@@ -1,0 +1,116 @@
+#! /bin/bash
+
+ipara=$(awk '/iparallel/{print $1}' AFSSH.inp)
+iflow=$(awk '/iflow/{print $1}' AFSSH.inp)
+imaxproc=$(awk '/iproc/{print $1}' AFSSH.inp)
+iwait=$(awk '/iwait/{print $1}' AFSSH.inp)
+
+crdir()
+{
+  for((i=1;i<=$ipara;i++)); do
+    if [ -d $i ]; then
+      rm -r $i
+      mkdir $i
+    else
+      mkdir $i
+    fi
+    cd $i
+    cp ../aout .
+    cp ../*.inp .
+    cp ../sub.sh .
+    echo $i > ifolder.inp
+    njobs=$(qstat|grep amb|grep -c r)
+    while [ $njobs -ge $imaxproc ]
+    do
+        ## wait for 2 mins and recheck  status of jobs
+        sleep $iwait
+        njobs=$(qstat|grep amb|grep -c r)
+    done
+    qsub sub.sh
+    sleep 0.5
+    cd ..
+  done
+}
+
+avg()
+{
+  if [ $ipara == 1 ]; then
+    echo "Cannot average. Not parallel job",$ipara
+  else
+    for((i=1;i<=$ipara;i++)); do
+      file_ra=$file_ra" $i/pop.out"
+    done
+    for((i=1;i<=$ipara;i++)); do
+      file_cn=$file_cn" $i/cnts.out"
+    done
+    awk '{
+      for(i=1;i<=NF;i++) su[FNR,i]=su[FNR,i]+$i}
+      END{
+        for(i=1;i<=FNR;i++){
+          for(j=1;j<=NF;j++){
+            su[i,j]=su[i,j]*FNR/NR
+            printf "%15.7f",su[i,j]
+            }
+          print ""
+        }
+    }' $file_ra > pop.out
+
+    awk '{
+      for(i=1;i<=NF;i++) su[FNR,i]=su[FNR,i]+$i}
+      END{
+        for(i=1;i<=FNR;i++){
+          for(j=1;j<=NF;j++){
+            su[i,j]=su[i,j]*FNR/NR
+            printf "%15.7f",su[i,j]
+            }
+          print ""
+        }
+    }' $file_cn > cnts.out 
+
+  fi
+
+}
+
+variation_param()
+{
+  awk 'NR==1{$1=2}1' AFSSH.inp>save_AFSSH.inp
+
+  while read lineno newvar dire
+    do
+      mkdir -p $dire
+      cd $dire
+      cp ../run .
+      cp ../sub.sh .
+      cp ../*.f* .
+      cp ../makefile .
+      touch mod*
+      awk 'NR==n{$1=x}1' n=$lineno x=$newvar ../save_AFSSH.inp>AFSSH.inp
+      ./run
+      cd ..
+    done < variation.inp
+}
+
+if [ $iflow == 1  ]; then
+  ### serial execution
+  echo "serial execution"
+  rm -f sub.sh.*
+  make
+  qsub sub.sh
+elif [ $iflow == 2 ];then
+  ### parallel execution
+  echo "parallel execution, Number of cpus = "$ipara
+  rm -f sub.sh.*
+  make
+  crdir
+elif [ $iflow == 3 ]; then
+  ### average for parallel execution
+  echo "Averaging data"
+  avg
+elif [ $iflow == 4 ]; then
+  ### variation to parameters
+  echo "Variation to parameters"
+  variation_param
+else
+  echo "no matching iflow",$iflow
+fi
+

@@ -1,0 +1,27 @@
+3                           !! iflow
+120                         !! iproc
+20                          !! iparallel
+120                         !! iwait
+100                       !! N_traj
+0.5d-15                     !! dt (*hbar/kT)
+10.d-12                     !! total_time (*hbar/kT)
+0                           !! iwrite: 1 - writes output_cl,output_qm
+1                           !! nstep_write
+10                          !! nstep_avg
+1                           !! idistribution - 1-classical, 0-Wigner
+0                           !! flag_frust - 0: reverse velocity, 1 - do nothing
+0                           !! flag_ortho - 1: orthogonalized overlap matrix
+0.1d0                      !! energy_cutoff (cm-1)
+5                           !! nclass
+5                           !! nquant
+0.d0                        !! V_exothermicity (cm-1)
+50.d0                       !! Vc (cm-1)
+200.d0                      !! omg_B (cm-1)
+1000.d0                     !! V_barrier (cm-1)
+1.d0                       !! gamma_B (hbar*omg)
+400.d0                      !! temperature (cm-1)
+1                           !! iforward: 1- left to right, 0 - right to left
+1                           !! icollapse: 1 - A-FSSH, 0 - FSSH
+0                           !! ifriction: 1 - random forces
+1729 3141                   !! seed
+x
