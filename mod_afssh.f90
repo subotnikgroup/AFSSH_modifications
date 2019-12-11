@@ -1525,4 +1525,20 @@ REAL FUNCTION determinant(matrix, n)
 END FUNCTION determinant
 !-----------------------------------------------------------------  
 
+subroutine gaussian_random_number(rnd)
+  !! generates gaussian distribution with center 0, sigma 1
+  !! q0+sig*rnd gives center=q0, sigma=sig
+  implicit none
+  real*8,intent(out)::rnd
+  real*8 rnd1,rnd2,pi
+
+  pi=dacos(-1.d0)
+
+  call random_number(rnd1)
+  call random_number(rnd2)
+  rnd = dsqrt(-2*log(rnd1))*dcos(2*pi*rnd2)
+
+end subroutine gaussian_random_number
+!---------------------------------------------------------- 
+
 End Module mod_afssh
