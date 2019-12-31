@@ -1,4 +1,4 @@
-3                           !! iflow - 1 - serial; 2 - parallel(generates $iparallel # of folders); 3 - averages
+1                           !! iflow - 1 - serial; 2 - parallel(generates $iparallel # of folders); 3 - averages
 120                         !! iproc - max number of jobs running at a time
 20                          !! iparallel - number of jobs to parallelize
 120                         !! iwait
